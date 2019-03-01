@@ -1,0 +1,14 @@
+# ignore local folders and config files
+aml_config/*.json
+Sample_Data
+.vscode
+outputs
+assets
+
+# ignore python cache
+*.pyc
+
+# ignore faultive folders
+Code/Modeling/aml_config
+Code/Modeling/assets
+Code/Modeling/.amlignore

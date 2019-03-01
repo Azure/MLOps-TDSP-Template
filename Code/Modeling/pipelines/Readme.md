@@ -1,0 +1,1 @@
+# This folder contains definitions for ML Pipelines. ML Pipelines define machine learning workflows that may consist of multiple execution steps that could run on heterogenous compute types. Compute steps may share data resources to pipe in- and outputs
