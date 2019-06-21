@@ -1,4 +1,4 @@
-# AI DevOps Quickstart Template #
+# MLOps Quickstart Template #
 
 This repo provides a quickstarter template as a fork on TDSP (https://github.com/Azure/Azure-TDSP-ProjectTemplate), extending the template with a suggested structure for operationalization using Azure. The current code base includes ARM templates as IaC for resource deployment, template build and release pipelines to enable ML model CI/CD, template code for working with Azure ML.
 
