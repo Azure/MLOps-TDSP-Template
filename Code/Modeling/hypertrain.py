@@ -3,42 +3,20 @@ import numpy as np
 from optparse import OptionParser
 import sys
 from time import time
-import matplotlib.pyplot as plt
+import os
+import json
+import argparse
 
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction.text import HashingVectorizer
-from sklearn.feature_selection import SelectFromModel
-from sklearn.feature_selection import SelectKBest, chi2
-from sklearn.linear_model import RidgeClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.svm import LinearSVC
-from sklearn.linear_model import SGDClassifier
-from sklearn.linear_model import Perceptron
-from sklearn.linear_model import PassiveAggressiveClassifier
-from sklearn.naive_bayes import BernoulliNB, ComplementNB, MultinomialNB
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.neighbors import NearestCentroid
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.utils.extmath import density
 from sklearn import metrics
+from sklearn.feature_selection import SelectKBest, chi2
+from sklearn.feature_extraction.text import HashingVectorizer
 
-
-import os
-
-
-from sklearn.linear_model import LogisticRegression
 from sklearn.externals import joblib
-
 from azureml.core import Run
-
-import os
-import shutil
-from azureml.core import Workspace, Experiment
-from azureml.core import RunConfiguration, ScriptRunConfig
-from azureml.core.authentication import AzureCliAuthentication
-from azureml.core import Run
-
 
 # Display progress logs on stdout
 logging.basicConfig(level=logging.INFO,
@@ -71,6 +49,10 @@ op.add_option("--filtered",
               action="store_true",
               help="Remove newsgroup information that is easily overfit: "
                    "headers, signatures, and quoting.")
+op.add_option("--max_depth", type=int, default=10)
+op.add_option("--n_estimators", type=int, default=100)
+op.add_option("--criterion", type=str, default='gini')
+op.add_option("--min_samples_split", type=int, default=2)
 
 
 def is_interactive():
@@ -114,9 +96,6 @@ data_test = fetch_20newsgroups(subset='test', categories=categories,
                                shuffle=True, random_state=42,
                                remove=remove)
 print('data loaded')
-
-
-
 
 # order of labels in `target_names` can be different from `categories`
 target_names = data_train.target_names
@@ -206,15 +185,14 @@ def benchmark(clf):
     print("test time:  %0.3fs" % test_time)
     score = metrics.accuracy_score(y_test, pred)
 
-    child_run = Run.get_context()
-    child_run.log("accuracy", float(score))
-    model_name = "model" + str(name) + ".pkl"
+    run_logger = Run.get_context()
+    run_logger.log("accuracy", float(score))
+    model_name = "model" + ".pkl"
     filename = "outputs/" + model_name
     joblib.dump(value=clf, filename=filename)
-    child_run.upload_file(name=model_name, path_or_stream=filename)
+    run_logger.upload_file(name=model_name, path_or_stream=filename)
 
     print("accuracy:   %0.3f" % score)
-
     if hasattr(clf, 'coef_'):
         print("dimensionality: %d" % clf.coef_.shape[1])
         print("density: %f" % density(clf.coef_))
@@ -242,65 +220,24 @@ def benchmark(clf):
 
 results = []
 
-for clf, name in (
-        (RidgeClassifier(tol=1e-2, solver="sag"), "Ridge Classifier"),
-        (Perceptron(max_iter=50), "Perceptron"),
-        (PassiveAggressiveClassifier(max_iter=50),
-         "Passive-Aggressive"),
-        (KNeighborsClassifier(n_neighbors=10), "kNN"),
-        (RandomForestClassifier(), "Random forest")):
-    print('=' * 80)
-    print(name)
-    results.append(benchmark(clf))
+# Select the training hyperparameters.
+# Create a dict of hyperparameters from the input flags.
+hyperparameters = {
+    "max_depth": opts.max_depth,
+    "n_estimators": opts.n_estimators,
+    "criterion":opts.criterion,
+    "min_samples_split": opts.min_samples_split
+}
 
-for penalty in ["l2", "l1"]:
-    print('=' * 80)
-    print("%s penalty" % penalty.upper())
-    # Train Liblinear model
-    name = penalty +  "LinearSVC"
-    results.append(benchmark(LinearSVC(penalty=penalty, dual=False,
-                                       tol=1e-3)))
-
-    # Train SGD model
-    name = penalty + "SGDClassifier"
-    results.append(benchmark(SGDClassifier(alpha=.0001, max_iter=50,
-                                           penalty=penalty)))
+# Select the training hyperparameters.
+max_depth = hyperparameters["max_depth"]
+n_estimators = hyperparameters["n_estimators"]
+criterion = hyperparameters["criterion"]
+min_samples_split = hyperparameters["min_samples_split"]
 
 
-# Train SGD with Elastic Net penalty
-print('=' * 80)
-print("Elastic-Net penalty")
-name = "Elastic-Net penalty"
-results.append(benchmark(SGDClassifier(alpha=.0001, max_iter=50,
-                                       penalty="elasticnet")))
+clf = RandomForestClassifier(max_depth=max_depth,
+                             n_estimators=n_estimators, criterion=criterion,
+                             min_samples_split=min_samples_split)
 
-# Train NearestCentroid without threshold
-print('=' * 80)
-print("NearestCentroid (aka Rocchio classifier)")
-name ="NearestCentroid (aka Rocchio classifier)"
-results.append(benchmark(NearestCentroid()))
-
-
-# Train sparse Naive Bayes classifiers
-print('=' * 80)
-print("Naive Bayes")
-name = "Naive Bayes MultinomialNB"
-results.append(benchmark(MultinomialNB(alpha=.01)))
-
-name = "Naive Bayes BernoulliNB"
-results.append(benchmark(BernoulliNB(alpha=.01)))
-
-name = "Naive Bayes ComplementNB"
-results.append(benchmark(ComplementNB(alpha=.1)))
-
-print('=' * 80)
-print("LinearSVC with L1-based feature selection")
-# The smaller C, the stronger the regularization.
-# The more regularization, the more sparsity.
-name = "LinearSVC with L1-based feature selection"
-results.append(benchmark(Pipeline([
-  ('feature_selection', SelectFromModel(LinearSVC(penalty="l1", dual=False,
-                                                  tol=1e-3))),
-  ('classification', LinearSVC(penalty="l2"))])))
-
-
+model = benchmark(clf)
