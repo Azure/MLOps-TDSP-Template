@@ -14,4 +14,4 @@ Code/Modeling/assets
 Code/Modeling/.amlignore
 
 # ignore tmp folders
-code/Modeling/datasets/tmp/*
+code/Data_Acquisition_and_Understanding/tmp/*

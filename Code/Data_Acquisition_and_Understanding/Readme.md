@@ -1,3 +1,1 @@
-# This folder hosts code for data acquisition and understanding (exploratory analysis)
-
-You can add a detailed description in this markdown related to your specific data science project.
+# This folder hosts production-intended data preparation logic

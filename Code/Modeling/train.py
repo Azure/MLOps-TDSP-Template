@@ -3,8 +3,6 @@ import numpy as np
 from optparse import OptionParser
 import sys
 from time import time
-import matplotlib.pyplot as plt
-
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import HashingVectorizer
@@ -22,23 +20,7 @@ from sklearn.neighbors import NearestCentroid
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.utils.extmath import density
 from sklearn import metrics
-
-
-import os
-
-
-from sklearn.linear_model import LogisticRegression
 from sklearn.externals import joblib
-
-from azureml.core import Run
-
-import os
-import shutil
-from azureml.core import Workspace, Experiment
-from azureml.core import RunConfiguration, ScriptRunConfig
-from azureml.core.authentication import AzureCliAuthentication
-from azureml.core import Run
-
 
 # Display progress logs on stdout
 logging.basicConfig(level=logging.INFO,
@@ -72,40 +54,7 @@ op.add_option("--filtered",
               help="Remove newsgroup information that is easily overfit: "
                    "headers, signatures, and quoting.")
 
-
-def is_interactive():
-    return not hasattr(sys.modules['__main__'], '__file__')
-
-
-# work-around for Jupyter notebook and IPython console
-argv = [] if is_interactive() else sys.argv[1:]
-(opts, args) = op.parse_args(argv)
-if len(args) > 0:
-    op.error("this script takes no arguments.")
-    sys.exit(1)
-
-print(__doc__)
-op.print_help()
-print()
-
-if opts.all_categories:
-    categories = None
-else:
-    categories = [
-        'alt.atheism',
-        'talk.religion.misc',
-        'comp.graphics',
-        'sci.space',
-    ]
-
-if opts.filtered:
-    remove = ('headers', 'footers', 'quotes')
-else:
-    remove = ()
-
-print("Loading 20 newsgroups dataset for categories:")
-print(categories if categories else "all")
-
+#old 
 data_train = fetch_20newsgroups(subset='train', categories=categories,
                                 shuffle=True, random_state=42,
                                 remove=remove)
@@ -115,8 +64,11 @@ data_test = fetch_20newsgroups(subset='test', categories=categories,
                                remove=remove)
 print('data loaded')
 
-
-
+# new
+run = Run.get_context()
+# get the input dataset by name
+dataset_train = run.input_datasets['dataset_train']
+dataset_test = run.input_datasets['dataset_test']
 
 # order of labels in `target_names` can be different from `categories`
 target_names = data_train.target_names
