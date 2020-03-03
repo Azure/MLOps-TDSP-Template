@@ -52,7 +52,7 @@ est = Estimator(
 
 print('Submitting experiment.. if compute is idle, this may take some time')
 run = experiment.submit(est)
-run.submit_child(est)
+run
 
 # wait for run completion to show logs
 run.wait_for_completion(show_output=True)
@@ -63,36 +63,4 @@ print('View run results in portal:', run.get_portal_url(), '\n')
 #shutil.rmtree(os.path.join(curr_dir, 'aml_config'))
 #os.remove(os.path.join(curr_dir, '.amlignore'))
 
-
-minimum_accuracy_runid = None
-minimum_accuracy = None
-
-for run in experiment.get_runs():
-    run_metrics = run.get_metrics()
-    run_details = run.get_details()
-    # each logged metric becomes a key in this returned dict
-    run_accuracy = run_metrics["accuracy"]
-    run_id = run_details["runId"]
-
-    if minimum_accuracy is None:
-        minimum_accuracy = run_accuracy
-        minimum_accuracy_runid = run_id
-    else:
-        if run_accuracy > minimum_accuracy:
-
-            minimum_accuracy = run_accuracy
-            minimum_accuracy_runid = run_id
-
-print("Best run_id: " + minimum_accuracy_runid)
-print("Best run_id accuracy: " + str(minimum_accuracy))
-
-best_run = Run(experiment=experiment, run_id=minimum_accuracy_runid)
-print(best_run.get_file_names())
-
-# register model
-model = best_run.register_model(
-    model_name='bestalgorithm',
-    model_path=os.path.join('outputs', str(best_run.get_file_names())+'.pkl')
-)
-print(model.name, model.id, model.version, sep='\t')
 

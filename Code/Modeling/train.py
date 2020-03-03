@@ -39,6 +39,7 @@ from azureml.core import RunConfiguration, ScriptRunConfig
 from azureml.core.authentication import AzureCliAuthentication
 from azureml.core import Run
 
+run = Run.get_context()
 
 # Display progress logs on stdout
 logging.basicConfig(level=logging.INFO,
@@ -206,7 +207,7 @@ def benchmark(clf):
     print("test time:  %0.3fs" % test_time)
     score = metrics.accuracy_score(y_test, pred)
 
-    child_run = Run.get_context()
+    child_run = run.child_run(name=name)
     child_run.log("accuracy", float(score))
     model_name = "model" + str(name) + ".pkl"
     filename = "outputs/" + model_name
@@ -237,8 +238,8 @@ def benchmark(clf):
 
     print()
     clf_descr = str(clf).split('(')[0]
+    child_run.complete()
     return clf_descr, score, train_time, test_time
-
 
 results = []
 
