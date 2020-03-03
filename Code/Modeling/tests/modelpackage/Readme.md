@@ -1,1 +1,0 @@
-# This folder contains unit tests for the sample package modelpackage.
