@@ -1,49 +1,25 @@
-import logging
+import sys
 import numpy as np
 from optparse import OptionParser
-import sys
-from time import time
-import matplotlib.pyplot as plt
-
 from sklearn.datasets import fetch_20newsgroups
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction.text import HashingVectorizer
-from sklearn.feature_selection import SelectFromModel
-from sklearn.feature_selection import SelectKBest, chi2
-from sklearn.linear_model import RidgeClassifier
+from sklearn.feature_extraction.text import TfidfVectorizer, HashingVectorizer
+from sklearn.feature_selection import SelectFromModel, SelectKBest, chi2
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
-from sklearn.linear_model import SGDClassifier
-from sklearn.linear_model import Perceptron
-from sklearn.linear_model import PassiveAggressiveClassifier
+from sklearn.linear_model import (
+    RidgeClassifier, SGDClassifier, Perceptron, PassiveAggressiveClassifier)
 from sklearn.naive_bayes import BernoulliNB, ComplementNB, MultinomialNB
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.neighbors import NearestCentroid
+from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.utils.extmath import density
 from sklearn import metrics
-
-
-import os
-
-
-from sklearn.linear_model import LogisticRegression
 from sklearn.externals import joblib
-
 from azureml.core import Run
 
-import os
-import shutil
-from azureml.core import Workspace, Experiment
-from azureml.core import RunConfiguration, ScriptRunConfig
-from azureml.core.authentication import AzureCliAuthentication
-from azureml.core import Run
+# Retrieve the Azure ML active run and it's context
+run = Run.get_context()
 
-
-# Display progress logs on stdout
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)s %(message)s')
-
+# Parse optional parameters
 op = OptionParser()
 op.add_option("--report",
               action="store_true", dest="print_report",
@@ -84,10 +60,6 @@ if len(args) > 0:
     op.error("this script takes no arguments.")
     sys.exit(1)
 
-print(__doc__)
-op.print_help()
-print()
-
 if opts.all_categories:
     categories = None
 else:
@@ -103,9 +75,7 @@ if opts.filtered:
 else:
     remove = ()
 
-print("Loading 20 newsgroups dataset for categories:")
-print(categories if categories else "all")
-
+# Loading 20 newsgroups sample dataset for defined categories
 data_train = fetch_20newsgroups(subset='train', categories=categories,
                                 shuffle=True, random_state=42,
                                 remove=remove)
@@ -113,34 +83,14 @@ data_train = fetch_20newsgroups(subset='train', categories=categories,
 data_test = fetch_20newsgroups(subset='test', categories=categories,
                                shuffle=True, random_state=42,
                                remove=remove)
-print('data loaded')
 
-
-
-
-# order of labels in `target_names` can be different from `categories`
+# Order of labels in `target_names` can be different from `categories`
 target_names = data_train.target_names
-
-
-def size_mb(docs):
-    return sum(len(s.encode('utf-8')) for s in docs) / 1e6
-
-
-data_train_size_mb = size_mb(data_train.data)
-data_test_size_mb = size_mb(data_test.data)
-
-print("%d documents - %0.3fMB (training set)" % (
-    len(data_train.data), data_train_size_mb))
-print("%d documents - %0.3fMB (test set)" % (
-    len(data_test.data), data_test_size_mb))
-print("%d categories" % len(target_names))
-print()
 
 # split a training set and a test set
 y_train, y_test = data_train.target, data_test.target
 
-print("Extracting features from the training data using a sparse vectorizer")
-t0 = time()
+# Extracting features from the training data using a sparse vectorizer
 if opts.use_hashing:
     vectorizer = HashingVectorizer(stop_words='english', alternate_sign=False,
                                    n_features=opts.n_features)
@@ -149,29 +99,18 @@ else:
     vectorizer = TfidfVectorizer(sublinear_tf=True, max_df=0.5,
                                  stop_words='english')
     X_train = vectorizer.fit_transform(data_train.data)
-duration = time() - t0
-print("done in %fs at %0.3fMB/s" % (duration, data_train_size_mb / duration))
-print("n_samples: %d, n_features: %d" % X_train.shape)
-print()
 
-print("Extracting features from the test data using the same vectorizer")
-t0 = time()
+# Extracting features from the test data using the same vectorizer
 X_test = vectorizer.transform(data_test.data)
-duration = time() - t0
-print("done in %fs at %0.3fMB/s" % (duration, data_test_size_mb / duration))
-print("n_samples: %d, n_features: %d" % X_test.shape)
-print()
 
-# mapping from integer feature name to original token string
+# Mapping from integer feature name to original token string
 if opts.use_hashing:
     feature_names = None
 else:
     feature_names = vectorizer.get_feature_names()
 
 if opts.select_chi2:
-    print("Extracting %d best features by a chi-squared test" %
-          opts.select_chi2)
-    t0 = time()
+    # Extracting %d best features by a chi-squared test
     ch2 = SelectKBest(chi2, k=opts.select_chi2)
     X_train = ch2.fit_transform(X_train, y_train)
     X_test = ch2.transform(X_test)
@@ -179,8 +118,6 @@ if opts.select_chi2:
         # keep selected feature names
         feature_names = [feature_names[i] for i
                          in ch2.get_support(indices=True)]
-    print("done in %fs" % (time() - t0))
-    print()
 
 if feature_names:
     feature_names = np.asarray(feature_names)
@@ -191,41 +128,44 @@ def trim(s):
     return s if len(s) <= 80 else s[:77] + "..."
 
 
-def benchmark(clf):
-    print('_' * 80)
-    print("Training: ")
-    print(clf)
-    t0 = time()
-    clf.fit(X_train, y_train)
-    train_time = time() - t0
-    print("train time: %0.3fs" % train_time)
+def benchmark(clf, name=""):
+    """benchmark classifier performance"""
+    # create a child run for Azure ML logging
+    child_run = run.child_run(name=name)
 
-    t0 = time()
-    pred = clf.predict(X_test)
-    test_time = time() - t0
-    print("test time:  %0.3fs" % test_time)
+    # train a model
+    print("\nTraining run with algorithm \n{}".format(clf))
+    clf.fit(X_train, y_train)
+
+    # evaluate on test set
+    pred = clf.predict(X_test)    
     score = metrics.accuracy_score(y_test, pred)
 
-    child_run = Run.get_context()
-    child_run.log("accuracy", float(score))
+    # write model artifact
     model_name = "model" + str(name) + ".pkl"
     filename = "outputs/" + model_name
     joblib.dump(value=clf, filename=filename)
-    child_run.upload_file(name=model_name, path_or_stream=filename)
 
-    print("accuracy:   %0.3f" % score)
+    # upload model artifact with child run
+    child_run.upload_file(
+        name=model_name,
+        path_or_stream=filename
+    )
+
+    # log model performance
+    child_run.log("accuracy", float(score))
 
     if hasattr(clf, 'coef_'):
-        print("dimensionality: %d" % clf.coef_.shape[1])
-        print("density: %f" % density(clf.coef_))
+        child_run.log("dimensionality", float(clf.coef_.shape[1]))
+        child_run.log("density", float(density(clf.coef_)))
 
         if opts.print_top10 and feature_names is not None:
             print("top 10 keywords per class:")
             for i, label in enumerate(target_names):
                 top10 = np.argsort(clf.coef_[i])[-10:]
                 print(trim("%s: %s" % (label, " ".join(feature_names[top10]))))
-        print()
 
+    # optional reporting
     if opts.print_report:
         print("classification report:")
         print(metrics.classification_report(y_test, pred,
@@ -235,13 +175,12 @@ def benchmark(clf):
         print("confusion matrix:")
         print(metrics.confusion_matrix(y_test, pred))
 
-    print()
     clf_descr = str(clf).split('(')[0]
-    return clf_descr, score, train_time, test_time
+    child_run.complete()
+    return clf_descr, score
 
 
-results = []
-
+# Run benchmark and collect results with multiple classifiers
 for clf, name in (
         (RidgeClassifier(tol=1e-2, solver="sag"), "Ridge Classifier"),
         (Perceptron(max_iter=50), "Perceptron"),
@@ -249,58 +188,79 @@ for clf, name in (
          "Passive-Aggressive"),
         (KNeighborsClassifier(n_neighbors=10), "kNN"),
         (RandomForestClassifier(), "Random forest")):
-    print('=' * 80)
-    print(name)
-    results.append(benchmark(clf))
+    # run benchmarking function for each
+    benchmark(clf, name)
 
+# Run with different regularization techniques
 for penalty in ["l2", "l1"]:
-    print('=' * 80)
-    print("%s penalty" % penalty.upper())
     # Train Liblinear model
-    name = penalty +  "LinearSVC"
-    results.append(benchmark(LinearSVC(penalty=penalty, dual=False,
-                                       tol=1e-3)))
+    name = penalty + "LinearSVC"
+    benchmark(
+        clf=LinearSVC(
+            penalty=penalty,
+            dual=False,
+            tol=1e-3
+        ),
+        name=penalty + "LinearSVC"
+    )
 
     # Train SGD model
-    name = penalty + "SGDClassifier"
-    results.append(benchmark(SGDClassifier(alpha=.0001, max_iter=50,
-                                           penalty=penalty)))
-
+    benchmark(
+        SGDClassifier(
+            alpha=.0001,
+            max_iter=50,
+            penalty=penalty
+        ),
+        name=penalty + "SGDClassifier"
+    )
 
 # Train SGD with Elastic Net penalty
-print('=' * 80)
-print("Elastic-Net penalty")
-name = "Elastic-Net penalty"
-results.append(benchmark(SGDClassifier(alpha=.0001, max_iter=50,
-                                       penalty="elasticnet")))
+benchmark(
+    SGDClassifier(
+        alpha=.0001,
+        max_iter=50,
+        penalty="elasticnet"
+    ),
+    name="Elastic-Net penalty"
+)
 
 # Train NearestCentroid without threshold
-print('=' * 80)
-print("NearestCentroid (aka Rocchio classifier)")
-name ="NearestCentroid (aka Rocchio classifier)"
-results.append(benchmark(NearestCentroid()))
-
+benchmark(
+    NearestCentroid(),
+    name="NearestCentroid (aka Rocchio classifier)"
+)
 
 # Train sparse Naive Bayes classifiers
-print('=' * 80)
-print("Naive Bayes")
-name = "Naive Bayes MultinomialNB"
-results.append(benchmark(MultinomialNB(alpha=.01)))
+benchmark(
+    MultinomialNB(alpha=.01),
+    name="Naive Bayes MultinomialNB"
+)
 
-name = "Naive Bayes BernoulliNB"
-results.append(benchmark(BernoulliNB(alpha=.01)))
+benchmark(
+    BernoulliNB(alpha=.01),
+    name="Naive Bayes BernoulliNB"
+)
 
-name = "Naive Bayes ComplementNB"
-results.append(benchmark(ComplementNB(alpha=.1)))
+benchmark(
+    ComplementNB(alpha=.1),
+    name="Naive Bayes ComplementNB"
+)
 
-print('=' * 80)
-print("LinearSVC with L1-based feature selection")
 # The smaller C, the stronger the regularization.
 # The more regularization, the more sparsity.
-name = "LinearSVC with L1-based feature selection"
-results.append(benchmark(Pipeline([
-  ('feature_selection', SelectFromModel(LinearSVC(penalty="l1", dual=False,
-                                                  tol=1e-3))),
-  ('classification', LinearSVC(penalty="l2"))])))
-
-
+benchmark(
+    Pipeline([
+        ('feature_selection',
+            SelectFromModel(
+                LinearSVC(
+                    penalty="l1",
+                    dual=False,
+                    tol=1e-3
+                )
+            )),
+        ('classification', 
+            LinearSVC(penalty="l2"))
+        ]
+    ),
+    name="LinearSVC with L1-based feature selection"
+)
