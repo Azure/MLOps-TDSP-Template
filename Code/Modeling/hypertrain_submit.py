@@ -29,11 +29,12 @@ if cluster_name in ws.compute_targets:
     print('Using pre-existing AML cluster {}'.format(cluster_name))
 else:
     # Create the cluster
-    compute_target = ComputeTarget.create(ws, cluster_name, provisioning_config)
+    compute_target = ComputeTarget.create(ws, cluster_name,
+                                          provisioning_config)
 
-    # You can poll for a minimum number of nodes and set a specific timeout. 
-    # If min node count is provided, provisioning will use the scale settings for the cluster.
-    compute_target.wait_for_completion(show_output=True, min_node_count=None, timeout_in_minutes=20)
+    compute_target.wait_for_completion(show_output=True,
+                                       min_node_count=None,
+                                       timeout_in_minutes=20)
 
 
 estimator = Estimator(
@@ -87,7 +88,7 @@ pd.Series(model_parameters, name='Value').to_frame()
 print(model_parameters)
 
 
-#model_parameters['--data-folder'] = ds.as_mount()
+# model_parameters['--data-folder'] = ds.as_mount()
 exp = Experiment(ws, "finalmodel")
 
 model_est = Estimator(source_directory=os.path.dirname(os.path.realpath(__file__)),
@@ -105,4 +106,5 @@ model_est = Estimator(source_directory=os.path.dirname(os.path.realpath(__file__
 
 model_run = exp.submit(model_est)
 model_run_status = model_run.wait_for_completion(wait_post_processing=True)
-model = model_run.register_model(model_name='model', model_path=os.path.join('outputs', 'model.pkl'))
+model = model_run.register_model(model_name='model',
+                                 model_path=os.path.join('outputs', 'model.pkl'))
