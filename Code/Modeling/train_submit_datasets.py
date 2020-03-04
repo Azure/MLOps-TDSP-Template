@@ -11,6 +11,10 @@ from azureml.core.authentication import AzureCliAuthentication
 # load Azure ML workspace
 workspace = Workspace.from_config(auth=AzureCliAuthentication())
 
+# retrieve datasets used for training
+dataset_train = Dataset.get_by_name(workspace, name='newsgroups_train')
+dataset_test = Dataset.get_by_name(workspace, name='newsgroups_test')
+
 # Define Run Configuration
 est = Estimator(
     entry_script='train.py',
@@ -27,7 +31,11 @@ est = Estimator(
         'matplotlib==3.0.2',
         'utils==0.9.0'
     ],
-    use_docker=False
+    use_docker=False,
+    inputs=[
+        dataset_train.as_named_input('train'),
+        dataset_train.as_named_input('test')
+    ],
 )
 
 # Define the ML experiment
