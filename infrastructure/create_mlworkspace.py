@@ -5,7 +5,7 @@ from azureml.core.authentication import AzureCliAuthentication
 # Create the workspace using the specified parameters
 ws = Workspace.create(
     name='azuremlworkshopws',
-    subscription_id='cf4e1704-b4bc-4554-bcd7-309394f2ee56',
+    subscription_id='<subscription>',
     resource_group='azuremlworkshoprgp',
     location='westeurope',
     create_resource_group=True,
