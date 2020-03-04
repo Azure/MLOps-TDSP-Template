@@ -64,26 +64,6 @@ training_pipeline = Pipeline(workspace=ws, steps=[trainStep])
 training_pipeline.validate()
 print("Pipeline validation complete")
 
-if run_experiment:
-    # Submit pipeline run
-    pipeline_run = Experiment(ws, exp_name).submit(training_pipeline)
-    pipeline_run.wait_for_completion()
-
-    # create output folder
-    os.makedirs(output_dir_local, exist_ok=True)
-
-    # Download trained model artifacts to local compute
-    run_train_step = list(pipeline_run.get_children())[0]
-    for file in ['model.pkl']:
-        run_train_step.download_file(
-            name=os.path.join(output_dir, file),
-            output_file_path=os.path.join(output_dir_local, file)
-        )
-
-if register_model:
-    #  @TODO Register model, version by build id
-    print('Registered model')
-
-if publish_pipeline:
-    # @TODO Publish pipeline, version by build id
-    print('Published pipeline')
+# Submit pipeline run
+pipeline_run = Experiment(ws, exp_name).submit(training_pipeline)
+pipeline_run.wait_for_completion()
