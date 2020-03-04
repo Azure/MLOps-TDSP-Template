@@ -65,6 +65,7 @@ parameter_values = best_run.get_details()['runDefinition']['arguments']
 # Print best set of parameters found
 best_parameters = dict(zip(parameter_values[::2], parameter_values[1::2]))
 pd.Series(best_parameters, name='Value').to_frame()
+
 best_model_parameters = best_parameters.copy()
 pd.Series(best_model_parameters, name='Value').to_frame()
 print(best_model_parameters)
@@ -90,8 +91,5 @@ model_run = experiment.submit(model_est)
 
 model_run_status = model_run.wait_for_completion(wait_post_processing=True)
 
-# # Register the model
-# model = model_run.register_model(
-#     model_name='model',
-#     model_path=os.path.join('outputs', 'model.pkl')
-# )
+model = model_run.register_model(model_name='model',
+                                 model_path=os.path.join('outputs', 'model.pkl'))
