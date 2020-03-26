@@ -1,0 +1,41 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspaceName": { 
+            "type": "string"
+        },
+        "keyVaultName": {
+            "type": "string"
+        },
+        "applicationInsightsName": {
+            "type": "string"
+        },
+        "containerRegistryName": {
+            "type": "string"
+        },
+        "storageAccountName": {
+            "type": "string"
+        },
+        "environment": {
+            "type": "string"
+        }
+    },
+    "resources": [
+        {
+            "name": "[concat(parameters('workspaceName'), parameters('environment'))]",
+            "type": "Microsoft.MachineLearningServices/workspaces",
+            "apiVersion": "2018-11-19",
+            "location": "[resourceGroup().location]",
+            "identity": {
+                "type": "systemAssigned"
+            },
+            "properties": {
+                "keyVault": "[resourceId('Microsoft.KeyVault/vaults', concat(parameters('keyVaultName'), parameters('environment')))]",
+                "applicationInsights": "[resourceId('Microsoft.Insights/components', concat(parameters('applicationInsightsName'), parameters('environment')))]",
+                "containerRegistry": "[resourceId('Microsoft.ContainerRegistry/registries', concat(parameters('containerRegistryName'), parameters('environment')))]",
+                "storageAccount": "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('storageAccountName'), parameters('environment')))]"
+            }
+        }
+    ]
+}
