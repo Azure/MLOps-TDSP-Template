@@ -3,10 +3,7 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "saname": {
-            "value": "amlquickstartstorage"
-        },
-        "environment": {
-            "value": "dev"
+            "value": "mlopssatest"
         },
         "location": {
             "value": "westeurope"

@@ -3,16 +3,13 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "kvname": {
-            "value": "amlquickstartkv"
+            "value": "mlops-kv-dev"
         },
         "location": {
             "value": "westeurope"
         },
         "createMode": {
             "value": "default"
-        },
-        "environment": {
-            "value": "dev"
         }
     }
 }

@@ -3,22 +3,19 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "workspaceName": {
-            "value": "amlquickstartworkspace"
+            "value": "mlops-mls-test"
         },
         "keyVaultName": {
-            "value": "amlquickstartkv"
+            "value": "mlops-kv-test"
         },
         "applicationInsightsName": {
-            "value": "amlquickstartinsights"
+            "value": "mlops-ain-test"
         },
         "containerRegistryName": {
-            "value": "amlquickstartacr"
+            "value": "mlopscrtest"
         },
         "storageAccountName": {
-            "value": "amlquickstartstorage"
-        },
-        "environment": {
-            "value": "dev"
+            "value": "mlopssatest"
         }
     }
 }

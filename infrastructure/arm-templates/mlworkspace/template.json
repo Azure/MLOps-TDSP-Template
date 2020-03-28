@@ -16,14 +16,11 @@
         },
         "storageAccountName": {
             "type": "string"
-        },
-        "environment": {
-            "type": "string"
         }
     },
     "resources": [
         {
-            "name": "[concat(parameters('workspaceName'), parameters('environment'))]",
+            "name": "[parameters('workspaceName')]",
             "type": "Microsoft.MachineLearningServices/workspaces",
             "apiVersion": "2018-11-19",
             "location": "[resourceGroup().location]",
@@ -31,10 +28,10 @@
                 "type": "systemAssigned"
             },
             "properties": {
-                "keyVault": "[resourceId('Microsoft.KeyVault/vaults', concat(parameters('keyVaultName'), parameters('environment')))]",
-                "applicationInsights": "[resourceId('Microsoft.Insights/components', concat(parameters('applicationInsightsName'), parameters('environment')))]",
-                "containerRegistry": "[resourceId('Microsoft.ContainerRegistry/registries', concat(parameters('containerRegistryName'), parameters('environment')))]",
-                "storageAccount": "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('storageAccountName'), parameters('environment')))]"
+                "keyVault": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+                "applicationInsights": "[resourceId('Microsoft.Insights/components', parameters('applicationInsightsName'))]",
+                "containerRegistry": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName'))]",
+                "storageAccount": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
             }
         }
     ]

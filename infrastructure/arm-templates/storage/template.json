@@ -5,9 +5,6 @@
         "saname": {
             "type": "string"
         },
-        "environment": {
-            "type": "string"
-        },
         "location": {
             "type": "string"
         },
@@ -29,7 +26,7 @@
                 "name": "[parameters('accountType')]"
             },
             "kind": "[parameters('kind')]",
-            "name": "[concat(parameters('saname'), parameters('environment'))]",
+            "name": "[parameters('saname')]",
             "apiVersion": "2018-07-01",
             "location": "[parameters('location')]",
             "properties": {
