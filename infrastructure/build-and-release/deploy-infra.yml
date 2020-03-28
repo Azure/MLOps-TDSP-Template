@@ -32,7 +32,7 @@ stages:
   - template: deploy-infra.template.yml
     parameters:
       environment: dev
-      serviceConnection: <your-service-connection>
+      serviceConnection: <your-service-connection-name>
 
 - stage: TEST
   # only make deployments to TEST originating from the master branch
@@ -42,5 +42,5 @@ stages:
   - template: deploy-infra.template.yml
     parameters:
       environment: test
-      serviceConnection: <your-service-connection>
+      serviceConnection: <your-service-connection-name>
 

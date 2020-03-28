@@ -3,13 +3,10 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "appInsightsName": {
-            "value": "amlquickstartinsights"
+            "value": "mlops-ain-dev"
         },
         "regionId": {
             "value": "westeurope"
-        },
-        "environment": {
-            "value": "dev"
         }
     }
 }

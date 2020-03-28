@@ -10,9 +10,6 @@
         },
         "createMode": {
             "type": "string"
-        },
-        "environment": {
-            "type": "string"
         }
     },
     "variables": {
@@ -20,7 +17,7 @@
     "resources": [
         {
             "type": "Microsoft.KeyVault/vaults",
-            "name": "[concat(parameters('kvname'), parameters('environment'))]",
+            "name": "[parameters('kvname')]",
             "apiVersion": "2018-02-14",
             "location": "[parameters('location')]",
             "tags": {},

@@ -7,16 +7,13 @@
         },
         "regionId": {
             "type": "string"
-        },
-        "environment": {
-            "type": "string"
         }
     },
     "resources": [
         {
             "type": "Microsoft.Insights/components",
             "location": "[parameters('regionId')]",
-            "name": "[concat(parameters('appInsightsName'), parameters('environment'))]",
+            "name": "[parameters('appInsightsName')]",
             "apiVersion": "2015-05-01",
             "kind": "web",
             "properties": {

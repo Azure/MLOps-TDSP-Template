@@ -19,6 +19,15 @@
         },
         "scaleDownTime": {
             "type": "string"
+        },
+        "subnetId": {
+            "type": "string"
+        },
+        "adminUserName": {
+            "type": "string"
+        },
+        "adminUserPassword": {
+            "type": "string"
         }
     },
     "variables": {},
@@ -40,7 +49,16 @@
                         "nodeIdleTimeBeforeScaleDown": "[parameters('scaleDownTime')]"
                     },
                     "vmPriority": "Dedicated",  
-                    "vmSize" : "[parameters('vmSize')]"      
+                    "vmSize" : "[parameters('vmSize')]",
+                    "userAccountCredentials" :
+                    {
+                        "adminUserName" : "[parameters('adminUserName')]",
+                        "adminUserPassword" : "[parameters('adminUserPassword')]"
+                    },
+                    "subnet" :
+                    {
+                        "id" : "[parameters('subnetId')]"
+                    }
                 }                
             }
         }

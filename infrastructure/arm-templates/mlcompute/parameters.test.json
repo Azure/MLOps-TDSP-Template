@@ -3,25 +3,22 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "workspaceName": {
-            "value": "amlquickstartworkspace"
+            "value": "mlops-mls-test"
         },
         "clusterName": {
-            "value": "mycompute"
+            "value": "cpu-compute"
         },
         "vmSize": {
-            "value": "Standard_D3_v2"
+            "value": "STANDARD_D3_V2"
         },
         "minNodeCount": {
             "value": 0
         },
         "maxNodeCount": {
-            "value": 25
+            "value": 3
         },
         "scaleDownTime": {
-            "value": "PT10M"
-        },
-        "environment": {
-            "value": "dev"
+            "value": "PT15M"
         }
     }
 }
